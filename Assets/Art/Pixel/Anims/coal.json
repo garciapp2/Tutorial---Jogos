@@ -1,0 +1,106 @@
+{
+ "frames": {
+  "coal_0": {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 13,
+    "h": 12
+   },
+   "duration": 167
+  },
+  "coal_1": {
+   "frame": {
+    "x": 13,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 13,
+    "h": 12
+   },
+   "duration": 167
+  },
+  "coal_2": {
+   "frame": {
+    "x": 26,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 13,
+    "h": 12
+   },
+   "duration": 167
+  },
+  "coal_3": {
+   "frame": {
+    "x": 39,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 13,
+    "h": 12
+   },
+   "sourceSize": {
+    "w": 13,
+    "h": 12
+   },
+   "duration": 167
+  }
+ },
+ "meta": {
+  "app": "pxl",
+  "image": "coal.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 52,
+   "h": 12
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "coal",
+    "from": 0,
+    "to": 3,
+    "direction": "forward"
+   }
+  ]
+ }
+}
