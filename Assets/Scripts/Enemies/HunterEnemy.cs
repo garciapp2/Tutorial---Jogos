@@ -7,7 +7,7 @@ using UnityEngine;
 /// volta para a patrulha refazendo o caminho (migalhas), entao nunca fica preso longe de casa.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class HunterEnemy : MonoBehaviour
+public class HunterEnemy : MonoBehaviour, IStunnable
 {
     enum State { Patrol, Chase, Search, Return }
 
@@ -36,6 +36,16 @@ public class HunterEnemy : MonoBehaviour
     Color baseColor;
     readonly Spring alertPop = new Spring(0f, 300f, 12f);
     bool wasChasing;
+    float stunTimer;
+
+    public bool Stunned => stunTimer > 0f;
+
+    public void Stun(Vector2 from)
+    {
+        stunTimer = global::Stun.Duration;
+        global::Stun.Hit(transform.position, from);
+        if (rb != null) rb.linearVelocity = ((Vector2)transform.position - from).normalized * 6f;
+    }
 
     void Start()
     {
@@ -70,6 +80,13 @@ public class HunterEnemy : MonoBehaviour
             rb.linearVelocity = Vector2.zero;
             if (gm.CurrentState != GameManager.State.Ready) return;
             Patrol();
+            return;
+        }
+
+        if (stunTimer > 0f)
+        {
+            stunTimer -= Time.fixedDeltaTime;
+            rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, Vector2.zero, 30f * Time.fixedDeltaTime);
             return;
         }
 
@@ -150,9 +167,10 @@ public class HunterEnemy : MonoBehaviour
         {
             // olhos acesos e tremida na perseguicao
             body.color = wasChasing ? Color.Lerp(baseColor, Pal.PurpleLight, 0.25f + Mathf.Sin(Time.time * 18f) * 0.1f) : baseColor;
+            if (stunTimer > 0f) global::Stun.Show(body, body.transform, stunTimer, baseColor);
             float flip = rb != null && rb.linearVelocity.x < -0.1f ? -1f : 1f;
             body.transform.localScale = new Vector3(flip, 1f, 1f);
-            body.transform.localPosition = wasChasing ? (Vector3)(Random.insideUnitCircle * 0.03f) : Vector3.zero;
+            if (stunTimer <= 0f) body.transform.localPosition = wasChasing ? (Vector3)(Random.insideUnitCircle * 0.03f) : Vector3.zero;
         }
     }
 
@@ -185,13 +203,13 @@ public class HunterEnemy : MonoBehaviour
         float step = patrolSpeed * Time.fixedDeltaTime;
         if (Physics2D.CircleCast(rb.position, radius, patrolDirection, step + 0.08f, wallMask).collider != null)
             patrolDirection = -patrolDirection;
-        rb.linearVelocity = patrolDirection * patrolSpeed;
+        rb.linearVelocity = patrolDirection * patrolSpeed * GameManager.EnemySpeed;
     }
 
     void MoveTowards(Vector2 target, float speed)
     {
         Vector2 dir = target - rb.position;
-        rb.linearVelocity = dir.magnitude > 0.05f ? dir.normalized * speed : Vector2.zero;
+        rb.linearVelocity = dir.magnitude > 0.05f ? dir.normalized * speed * GameManager.EnemySpeed : Vector2.zero;
     }
 
     void DropCrumb()

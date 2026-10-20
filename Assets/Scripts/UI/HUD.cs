@@ -131,7 +131,7 @@ public class HUD : MonoBehaviour
         frostLabel.enabled = gm.InFrostZone && gm.IsPlaying && Mathf.Repeat(Time.unscaledTime, 0.6f) > 0.15f;
 
         timeText.Text = Settings.FormatTime(gm.Elapsed);
-        fragmentText.Text = $"{gm.Fragments}/{gm.TotalFragments}";
+        fragmentText.Text = GameManager.Endless ? $"O{gm.Wave}  {gm.Fragments}/{gm.TotalFragments}" : $"{gm.Fragments}/{gm.TotalFragments}";
         fragmentText.color = gm.ExitUnlocked ? Pal.Yellow : Pal.White;
         fragPop.Update(dt);
         fragmentIcon.localScale = Vector3.one * fragPop.value;
@@ -238,7 +238,7 @@ public class HUD : MonoBehaviour
         if (show) pauseMenu.index = 0;
     }
 
-    public void ShowGameOver(string title, string reason, float time, int score, int fragments, int total)
+    public void ShowGameOver(string title, string reason, float time, int score, int fragments, int total, int wave = 0)
     {
         resultsTitle.Text = title;
         resultsTitle.color = Pal.BlueLight;
@@ -246,8 +246,10 @@ public class HUD : MonoBehaviour
         resultsGradeLabel.SetActive(false);
         resultsIcon.enabled = true;
         resultsReason.Text = reason;
-        resultsLabels.Text = "TEMPO\nFRAGMENTOS\nPONTOS";
-        resultsValues.Text = $"{Settings.FormatTime(time)}\n{fragments}/{total}\n{score}";
+        resultsLabels.Text = wave > 0 ? "TEMPO\nONDA\nFRAGMENTOS\nPONTOS" : "TEMPO\nFRAGMENTOS\nPONTOS";
+        resultsValues.Text = wave > 0
+            ? $"{Settings.FormatTime(time)}\n{wave}\n{fragments}/{total}\n{score}"
+            : $"{Settings.FormatTime(time)}\n{fragments}/{total}\n{score}";
         resultsMenu.items[0].label.Text = "TENTAR DE NOVO";
         OpenResults();
     }

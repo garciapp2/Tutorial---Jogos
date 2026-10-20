@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 /// <summary>
@@ -37,6 +38,20 @@ public class ExitBonfire : MonoBehaviour
             anim.frames = litFrames;
             anim.enabled = true;
         }
+    }
+
+    /// <summary>Modo infinito: depois de arder um instante, a fogueira congela de novo.</summary>
+    public void ResetFrozen() => StartCoroutine(Refreeze());
+
+    IEnumerator Refreeze()
+    {
+        yield return new WaitForSeconds(1.4f);
+        lit = false;
+        ready = false;
+        if (anim != null) anim.enabled = false;
+        sprite.sprite = frozenSprite;
+        pop.Kick(-8f);
+        if (Fx.Instance != null) Fx.Instance.Burst(transform.position, 14, new[] { Pal.White, Pal.BlueLight }, 120f, 0.5f, 2f);
     }
 
     void Update()

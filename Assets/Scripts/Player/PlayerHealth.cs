@@ -20,6 +20,22 @@ public class PlayerHealth : MonoBehaviour
         Current = maxHealth;
         movement = GetComponent<PlayerMovement>();
         visual = GetComponent<PlayerVisual>();
+        if (movement != null) movement.Fell += OnFell;
+    }
+
+    /// <summary>Caiu no abismo: custa calor (nao coracao) e volta ao chao firme, como no Celeste.</summary>
+    void OnFell()
+    {
+        var gm = GameManager.Instance;
+        if (Current <= 0 || (gm != null && !gm.IsPlaying)) return;
+        invulnerableTimer = 0.8f;
+        AudioManager.Play(Sfx.Hurt, 0.6f, 0.7f);
+        if (Fx.Instance != null)
+        {
+            Fx.Instance.AddTrauma(Fx.Tune.ShakeLight);
+            Fx.Instance.Burst(transform.position, 10, new[] { Pal.Ink, Pal.Slate, Pal.Orange }, 60f, 0.5f, 2f);
+        }
+        if (gm != null) gm.FellInPit(transform.position);
     }
 
     void Update()

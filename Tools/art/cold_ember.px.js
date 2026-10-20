@@ -215,3 +215,10 @@ anim("core", { w: 9, h: 11, frames: 6, fps: 12 }, (c) => {
 })
 // versao montada para o logo do menu
 sprite("orb_logo", { w: 15, h: 15 }, stamp("orb_back", 0, 0), stamp("core", 3, 2, { frame: 1 }), stamp("orb_glass", 0, 0))
+
+// ------------------------------------------------------------------ abismo (so atravessa com dash)
+// Buraco escuro; a variante "_top" tem a borda de gelo quebrada (quando ha chao em cima).
+sprite("pit", { w: 16, h: 16 }, rect(0, 0, 16, 16, "k"), hline(0, 15, 16, "n"), px(4, 9, "n"), px(11, 5, "n"))
+sprite("pit_top", { w: 16, h: 16 }, stamp("pit", 0, 0),
+  rect(0, 0, 16, 3, "s"), hline(0, 0, 16, "c"), hline(0, 3, 16, "d"),
+  px(3, 4, "d"), px(4, 4, "s"), px(9, 4, "d"), px(13, 4, "s"), px(14, 5, "d"), px(6, 1, "w"))

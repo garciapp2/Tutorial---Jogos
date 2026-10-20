@@ -41,20 +41,21 @@ public class MainMenu : MonoBehaviour
         record.Text = best >= 0f
             ? $"RECORDE  <#fff6e0>{Settings.FormatTime(best)}</>   NOTA  <#f8cf4e>{(Settings.BestGrade == "" ? "-" : Settings.BestGrade)}</>   <#fff6e0>{Settings.BestScore}</> PTS"
             : "NENHUMA FOGUEIRA ACESA AINDA";
+        if (Settings.BestWave > 0) record.Text += $"   INFINITO  <#fff6e0>ONDA {Settings.BestWave}</>";
     }
 
     void BuildLogo()
     {
-        AddWord("C", 0, Pal.BlueLight, Pal.BlueDark, 0);
+        AddWord("C", 0, Pal.White, Pal.BlueLight, 0);
         // o "O" e a brasa
         int oW = 5 * Scale + Scale;
         float cx = PixelText.Width("C", Scale) + Scale;
         emberHome = new Vector2(cx + oW / 2f - Scale / 2f, -Scale * 3.5f);
         emberShadow = Img("SombraBrasa", emberSprite, Pal.Alpha(Pal.Ink, 0.4f));
         ember = Img("Brasa", emberSprite, Color.white);
-        AddWord("LD", cx + oW, Pal.BlueLight, Pal.BlueDark, 2);
+        AddWord("LD", cx + oW, Pal.White, Pal.BlueLight, 2);
         float emberW = PixelText.Width("EMBER", Scale);
-        AddWord("EMBER", -emberW / 2f + PixelText.Width("COLD", Scale) / 2f, Pal.Orange, Pal.RedDark, 4, -Scale * 10);
+        AddWord("EMBER", -emberW / 2f + PixelText.Width("COLD", Scale) / 2f, Pal.Yellow, Pal.Orange, 4, -Scale * 10);
     }
 
     void AddWord(string word, float x, Color face, Color under, int startIndex, float y = 0f)
@@ -62,8 +63,11 @@ public class MainMenu : MonoBehaviour
         foreach (char c in word)
         {
             var l = new Letter { x = x, y = y, index = startIndex++ };
-            l.under = Glyph(c, under, false);
             l.rt = Glyph(c, face, true);
+            var t = l.rt.GetComponent<PixelText>();
+            t.outline = true;
+            t.gradient = true;
+            t.gradientBottom = under;
             letters.Add(l);
             x += PixelText.Width(c.ToString(), Scale) + Scale;
         }
@@ -107,9 +111,7 @@ public class MainMenu : MonoBehaviour
             float bob = Mathf.Sin(time * 2.2f + l.index * 0.55f) * Scale * 0.35f;
             float y = Mathf.Round(l.y + bob + (1f - enter) * 40f);
             l.rt.anchoredPosition = new Vector2(l.x, y);
-            l.under.anchoredPosition = new Vector2(l.x, y - Mathf.Round(Scale * 0.7f));
             SetAlpha(l.rt, enter);
-            SetAlpha(l.under, enter);
         }
 
         // a brasa quica no lugar do "O" e amassa ao tocar o chao
@@ -136,7 +138,17 @@ public class MainMenu : MonoBehaviour
     }
 
     // ------------------------------------------------------------ botoes
-    public void Play() => Transition.Load(GameManager.GameScene);
+    public void Play()
+    {
+        GameManager.Endless = false;
+        Transition.Load(GameManager.GameScene);
+    }
+
+    public void PlayEndless()
+    {
+        GameManager.Endless = true;
+        Transition.Load(GameManager.GameScene);
+    }
 
     public void ShowHowTo()
     {

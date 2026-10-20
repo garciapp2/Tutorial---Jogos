@@ -490,6 +490,7 @@ public static class GameBuilder
         box.size = new Vector2(0.75f, 0.6f);
         box.offset = new Vector2(0f, -0.15f);
         go.AddComponent<DamageOnTouch>();
+        go.AddComponent<IceCrystal>();
     }
 
     static ExitBonfire CreateBonfire(Vector2 pos)
@@ -531,10 +532,11 @@ public static class GameBuilder
         var frost = Map("Gelo", -19, false);
         var walls = Map("Paredes", -10, true);
         // o chao deixa o redemoinho pulsar de leve por baixo
-        floor.color = new Color(1f, 1f, 1f, 0.82f);
+        floor.color = new Color(1f, 1f, 1f, 0.5f);
 
         var floorTiles = new[] { MakeTile("floor_a", false), MakeTile("floor_a", false), MakeTile("floor_a", false), MakeTile("floor_b", false), MakeTile("floor_c", false) };
         var frostTiles = new[] { MakeTile("frost_a", false), MakeTile("frost_a", false), MakeTile("frost_b", false) };
+        var pitTile = MakeTile("pit", false); var pitTop = MakeTile("pit_top", false);
         var w0 = MakeTile("wall_0", true); var wn = MakeTile("wall_n", true);
         var ws = MakeTile("wall_s", true); var wns = MakeTile("wall_ns", true);
 
@@ -548,6 +550,10 @@ public static class GameBuilder
                 bool north = at(x, y + 1) != '#';
                 bool south = at(x, y - 1) != '#';
                 walls.SetTile(cell, north && south ? wns : north ? wn : south ? ws : w0);
+            }
+            else if (c == '_')
+            {
+                frost.SetTile(cell, at(x, y + 1) == '_' ? pitTile : pitTop);
             }
             else if (c != ' ')
             {
@@ -579,6 +585,30 @@ public static class GameBuilder
             var box = solid.AddComponent<BoxCollider2D>();
             box.offset = new Vector2(x + rw / 2f, y + rh / 2f);
             box.size = new Vector2(rw, rh);
+        }
+        // abismos: gatilhos um pouco menores que as casas (cai quem para com o centro em cima)
+        var pits = Child(grid.transform, "Abismos");
+        pits.AddComponent<Pit>();
+        var seenPit = new HashSet<Vector2Int>();
+        for (int y = minY; y < minY + h; y++)
+        for (int x = minX; x < minX + w; x++)
+        {
+            if (at(x, y) != '_' || seenPit.Contains(new Vector2Int(x, y))) continue;
+            int rw = 1;
+            while (at(x + rw, y) == '_' && !seenPit.Contains(new Vector2Int(x + rw, y))) rw++;
+            int rh = 1;
+            while (true)
+            {
+                bool full = true;
+                for (int i = 0; i < rw; i++) if (at(x + i, y + rh) != '_') { full = false; break; }
+                if (!full) break;
+                rh++;
+            }
+            for (int j = 0; j < rh; j++) for (int i = 0; i < rw; i++) seenPit.Add(new Vector2Int(x + i, y + j));
+            var box = pits.AddComponent<BoxCollider2D>();
+            box.isTrigger = true;
+            box.offset = new Vector2(x + rw / 2f, y + rh / 2f);
+            box.size = new Vector2(rw - 0.8f, rh - 0.8f);
         }
         return grid;
     }
@@ -969,11 +999,12 @@ public static class GameBuilder
         var col = Box(main, "Botoes", TC, TC, new Vector2(0, -130), new Vector2(120, 100));
         var isz = new Vector2(120, 18);
         Item(col, mm, "JOGAR", Pal.Red, new Vector2(0, 0), isz, menu.Play);
-        Item(col, mm, "COMO JOGAR", Pal.Blue, new Vector2(0, -22), isz, menu.ShowHowTo);
-        Item(col, mm, "OPÇÕES", Pal.Purple, new Vector2(0, -44), isz, menu.ShowOptions);
-        menu.quitItem = Item(col, mm, "SAIR", Pal.Slate, new Vector2(0, -66), isz, menu.Quit);
-        menu.record = Text(main, "Recorde", "", BC, BC, new Vector2(0, 34), new Vector2(240, 10), Pal.Fog, 1, PixelText.Align.Center, false);
-        menu.hint = Text(main, "Dica", "", BC, BC, new Vector2(0, 18), new Vector2(240, 10), Pal.Fog, 1, PixelText.Align.Center, false);
+        Item(col, mm, "MODO INFINITO", Pal.Orange, new Vector2(0, -22), isz, menu.PlayEndless);
+        Item(col, mm, "COMO JOGAR", Pal.Blue, new Vector2(0, -44), isz, menu.ShowHowTo);
+        Item(col, mm, "OPÇÕES", Pal.Purple, new Vector2(0, -66), isz, menu.ShowOptions);
+        menu.quitItem = Item(col, mm, "SAIR", Pal.Slate, new Vector2(0, -88), isz, menu.Quit);
+        menu.record = Text(main, "Recorde", "", BC, BC, new Vector2(0, 34), new Vector2(460, 10), Pal.Fog, 1, PixelText.Align.Center, false);
+        menu.hint = Text(main, "Dica", "", BC, BC, new Vector2(0, 18), new Vector2(460, 10), Pal.Fog, 1, PixelText.Align.Center, false);
 
         // como jogar
         var how = Stretch(root, "Como Jogar");
@@ -983,18 +1014,19 @@ public static class GameBuilder
             TL, TL, new Vector2(14, -32), new Vector2(424, 20), Pal.Bone, 1, PixelText.Align.Left, false, false, false, true);
         var rowsData = new (string sprite, bool anim, string text)[]
         {
-            ("coal", true, "<#f58a3a>CARVÃO</>  +3s de calor. Pegue em sequência!"),
-            ("fragment", true, "<#f8cf4e>FRAGMENTO</>  +5s. Junte os cinco."),
-            ("bonfire_off", false, "<#f8cf4e>FOGUEIRA</>  Abre com os 5 fragmentos."),
-            ("frost_a", false, "<#a3cbff>GELO</>  O calor cai 2,5x mais rápido."),
-            ("ghost", true, "<#aaf3e4>ESPÍRITO</>  Patrulha em linha reta."),
-            ("hunter", true, "<#d9b5ff>CAÇADOR</>  Persegue quando te vê."),
-            ("spikes", false, "<#a3cbff>CRISTAIS</>  Machucam ao toque."),
+            ("coal", true, "<#f58a3a>CARVÃO</>  +3s e recarrega o dash"),
+            ("fragment", true, "<#f8cf4e>FRAGMENTO</>  +5s. Junte os cinco"),
+            ("bonfire_off", false, "<#f8cf4e>FOGUEIRA</>  Abre com os 5 fragmentos"),
+            ("frost_a", false, "<#a3cbff>GELO</>  O calor cai 2,5x mais rápido"),
+            ("pit_top", false, "<#7a75aa>ABISMO</>  Só se atravessa com dash"),
+            ("ghost", true, "<#aaf3e4>ESPÍRITO</>  Patrulha. O dash atordoa"),
+            ("hunter", true, "<#d9b5ff>CAÇADOR</>  Persegue. O dash atordoa"),
+            ("spikes", false, "<#a3cbff>CRISTAIS</>  Ferem. O dash quebra"),
         };
         for (int i = 0; i < rowsData.Length; i++)
         {
             var (sprite, isAnim, text) = rowsData[i];
-            float y = -62 - i * 21;
+            float y = -60 - i * 18;
             var s = isAnim ? Anim(sprite)[0] : Px(sprite);
             float k = Mathf.Min(1f, 18f / Mathf.Max(s.rect.width, s.rect.height));
             var icon = Icon(hc, sprite, s, TL, new Vector2(26, y), k);
@@ -1012,8 +1044,8 @@ public static class GameBuilder
             "<#7a75aa>DASH</>\n ESPAÇO / SHIFT\n <#a3cbff>A / RT</>\n" +
             "<#7a75aa>PAUSA</>\n ESC / P\n <#a3cbff>START</>",
             TR, TR, new Vector2(-14, -70), new Vector2(170, 100), Pal.White, 1, PixelText.Align.Left, false);
-        Text(hc, "Dash", "O dash gasta 1,5s de calor, mas te deixa intocável por um instante.",
-            TR, TR, new Vector2(-14, -166), new Vector2(170, 30), Pal.Bone, 1, PixelText.Align.Left, false, false, false, true);
+        Text(hc, "Dash", "DASH em 8 direções (1s de calor). Volta sozinho ou ao pegar carvão. No dash você é intocável.",
+            TR, TR, new Vector2(-14, -160), new Vector2(170, 40), Pal.Bone, 1, PixelText.Align.Left, false, false, false, true);
         var hm = Menu(hc.gameObject);
         Item(hc, hm, "VOLTAR", Pal.Blue, new Vector2(0, -210), new Vector2(120, 18), menu.ShowMain);
         menu.howToPanel = how.gameObject;
@@ -1042,6 +1074,35 @@ public static class GameBuilder
         AssetDatabase.SaveAssets();
     }
 
+    /// <summary>
+    /// Deixa a pagina do WebGL com a cara do jogo (e o que aparece dentro do embed do itch.io):
+    /// fundo da paleta, logo do Cold Ember no carregamento, barra de progresso nas cores do jogo
+    /// e sem o rodape do Unity.
+    /// </summary>
+    [MenuItem("Cold Ember/Ajustar pagina WebGL")]
+    public static void PatchWebTemplate() => PatchWebTemplate("Builds/WebGL");
+
+    public static void PatchWebTemplate(string dir)
+    {
+        string css = Path.Combine(dir, "TemplateData", "style.css");
+        if (!File.Exists(css)) return;
+        File.AppendAllText(css, @"
+/* Cold Ember */
+html, body { background: #120e26; overflow: hidden; }
+#unity-canvas { background: #120e26 !important; image-rendering: pixelated; }
+#unity-loading-container { backdrop-filter: none; background: #120e26; }
+#unity-logo { width: 240px; height: 132px; background: url('loading_logo.png') no-repeat center; image-rendering: pixelated; }
+#unity-progress-bar-empty { width: 200px; height: 10px; margin: 14px auto 0; background: #231c40; border: 2px solid #0b0912; }
+#unity-progress-bar-full { height: 10px; margin-top: 0; background: #f58a3a; box-shadow: inset 0 2px 0 #f8cf4e; }
+#unity-footer { display: none; }
+");
+        string logo = "Tools/art/web/loading_logo.png";
+        if (File.Exists(logo)) File.Copy(logo, Path.Combine(dir, "TemplateData", "loading_logo.png"), true);
+        string html = Path.Combine(dir, "index.html");
+        File.WriteAllText(html, File.ReadAllText(html).Replace("Unity Web Player | Cold Ember", "Cold Ember"));
+        Debug.Log("[GameBuilder] Pagina WebGL ajustada.");
+    }
+
     [MenuItem("Cold Ember/Gerar build WebGL")]
     public static void BuildWebGL()
     {
@@ -1054,6 +1115,7 @@ public static class GameBuilder
             options = BuildOptions.None,
         };
         var report = UnityEditor.BuildPipeline.BuildPlayer(options);
+        if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) PatchWebTemplate("Builds/WebGL");
         Debug.Log($"[GameBuilder] Build WebGL: {report.summary.result} ({report.summary.totalSize / (1024 * 1024f):0.0} MB) em {report.summary.totalTime}");
     }
 }

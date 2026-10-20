@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -16,6 +17,16 @@ public class GameManager : MonoBehaviour
     public const string MenuScene = "MainMenu";
     public const string GameScene = "Game";
 
+    /// <summary>Modo infinito: depois de acender a fogueira vem outra onda, mais rapida.</summary>
+    public static bool Endless;
+    /// <summary>Multiplicador de velocidade dos inimigos (sobe a cada onda).</summary>
+    public static float EnemySpeed = 1f;
+
+    [Header("Arena sorteada")]
+    [Tooltip("Quantos fragmentos sao sorteados entre os lugares marcados com F no mapa.")]
+    public int fragmentsPerRun = 5;
+    [Range(0, 1)] public float coalChance = 0.75f;
+
     [Header("Tempo (calor)")]
     public float startHeat = 30f;
     public float maxHeat = 45f;
@@ -23,6 +34,7 @@ public class GameManager : MonoBehaviour
     public float fragmentHeat = 5f;
     public float lowHeat = 10f;
     public float frostDrain = 2.5f;
+    public float pitHeatCost = 3f;
 
     [Header("Pontuacao")]
     public int coalScore = 100;
@@ -52,6 +64,11 @@ public class GameManager : MonoBehaviour
     /// <summary>Calor que o dash gastou por ultimo (a barra mostra o atraso em branco).</summary>
     public float LastSpent { get; private set; }
 
+    public int Wave { get; private set; } = 1;
+    float drainScale = 1f;
+    readonly List<Vector3> fragmentSpots = new List<Vector3>();
+    readonly List<Vector3> coalSpots = new List<Vector3>();
+    GameObject fragmentTemplate, coalTemplate;
     int frostZones;
     int combo;
     float comboTimer;
@@ -71,16 +88,105 @@ public class GameManager : MonoBehaviour
 
     IEnumerator Start()
     {
-        foreach (var p in FindObjectsByType<Pickup>())
-            if (p.type == Pickup.Kind.Fragment) TotalFragments++;
+        EnemySpeed = 1f;
+        SetupArena();
         hud.Refresh(true);
-        hud.Banner($"ACHE OS {TotalFragments} FRAGMENTOS", Pal.Yellow, 1.6f);
+        hud.Banner(Endless ? "MODO INFINITO" : $"ACHE OS {TotalFragments} FRAGMENTOS", Pal.Yellow, 1.6f);
         AudioManager.SetLayers(0f, 0f);
         yield return new WaitForSeconds(1.6f);
         hud.Banner("VAI!", Pal.White, 0.6f, 4);
         if (Fx.Instance != null) Fx.Instance.AddPulse(0.6f);
         AudioManager.Play(Sfx.UiConfirm);
         CurrentState = State.Playing;
+    }
+
+    /// <summary>
+    /// Sorteia a arena: 5 fragmentos entre os lugares marcados, parte dos carvoes e o sentido
+    /// dos espiritos. Guarda os lugares e um modelo de cada coletavel para as ondas do modo infinito.
+    /// </summary>
+    void SetupArena()
+    {
+        var frags = new List<Pickup>();
+        foreach (var p in FindObjectsByType<Pickup>())
+        {
+            if (p.type == Pickup.Kind.Fragment) { frags.Add(p); fragmentSpots.Add(p.transform.position); }
+            else coalSpots.Add(p.transform.position);
+        }
+        fragmentTemplate = Template(frags.Count > 0 ? frags[0].gameObject : null);
+        foreach (var p in FindObjectsByType<Pickup>())
+            if (p.type == Pickup.Kind.Coal) { if (coalTemplate == null) coalTemplate = Template(p.gameObject); break; }
+
+        for (int i = frags.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (frags[i], frags[j]) = (frags[j], frags[i]);
+        }
+        for (int i = fragmentsPerRun; i < frags.Count; i++) Destroy(frags[i].gameObject);
+        TotalFragments = Mathf.Min(fragmentsPerRun, frags.Count);
+
+        foreach (var p in FindObjectsByType<Pickup>())
+            if (p.type == Pickup.Kind.Coal && Random.value > coalChance) Destroy(p.gameObject);
+        foreach (var e in FindObjectsByType<PatrolEnemy>())
+            if (Random.value < 0.5f) e.direction = -e.direction;
+    }
+
+    static GameObject Template(GameObject source)
+    {
+        if (source == null) return null;
+        var t = Instantiate(source);
+        t.SetActive(false);
+        return t;
+    }
+
+    /// <summary>Proxima onda do modo infinito: novos fragmentos, carvoes de volta e tudo mais rapido.</summary>
+    void NextWave()
+    {
+        Wave++;
+        Fragments = 0;
+        drainScale *= 1.15f;
+        EnemySpeed *= 1.1f;
+        Score += 1000 * (Wave - 1);
+        AddHeat(12f);
+        if (exit != null) exit.ResetFrozen();
+
+        var spots = new List<Vector3>(fragmentSpots);
+        for (int i = 0; i < fragmentsPerRun && spots.Count > 0; i++)
+        {
+            int k = Random.Range(0, spots.Count);
+            Spawn(fragmentTemplate, spots[k]);
+            spots.RemoveAt(k);
+        }
+        TotalFragments = fragmentsPerRun;
+        foreach (var c in coalSpots)
+            if (Random.value <= coalChance && Physics2D.OverlapPoint(c) == null) Spawn(coalTemplate, c);
+
+        AudioManager.Play(Sfx.Unlock);
+        hud.Banner($"ONDA {Wave}", Pal.Orange, 1.8f, 4);
+        hud.Popup($"+{1000 * (Wave - 1)}", player.transform.position, Pal.Yellow, 2);
+        if (Fx.Instance != null)
+        {
+            Fx.Instance.AddPulse(1.2f);
+            Fx.Instance.AddFlash(0.2f);
+            Fx.Instance.Ring(exit.transform.position, Pal.Yellow, 80f, 0.6f, 40);
+        }
+        hud.Refresh(true);
+    }
+
+    static void Spawn(GameObject template, Vector3 at)
+    {
+        if (template == null) return;
+        var go = Instantiate(template, at, Quaternion.identity);
+        go.SetActive(true);
+    }
+
+    public void AddScore(int amount) => Score += amount;
+
+    /// <summary>Queda no abismo: perde calor, nao vida.</summary>
+    public void FellInPit(Vector2 at)
+    {
+        Heat = Mathf.Max(0.1f, Heat - pitHeatCost);
+        hud.HeatSpent();
+        hud.Popup($"-{pitHeatCost:0}s", at, Pal.BlueLight, 2);
     }
 
     void Update()
@@ -96,7 +202,7 @@ public class GameManager : MonoBehaviour
 
         float dt = Time.deltaTime;
         Elapsed += dt;
-        Heat -= dt * (InFrostZone ? frostDrain : 1f);
+        Heat -= dt * (InFrostZone ? frostDrain : 1f) * drainScale;
 
         comboTimer -= dt;
         if (comboTimer <= 0f) combo = 0;
@@ -175,6 +281,9 @@ public class GameManager : MonoBehaviour
                 fx.Sparks(at, Vector2.up, 6, new[] { Pal.Yellow, Pal.Orange }, 140f, 0.6f);
             }
             hud.HeatGained();
+            // como os cristais de recarga do Celeste: carvao devolve o dash na hora
+            var mv = player.GetComponent<PlayerMovement>();
+            if (mv != null) mv.RefillDash();
         }
         else
         {
@@ -233,6 +342,12 @@ public class GameManager : MonoBehaviour
             int left = TotalFragments - Fragments;
             hud.Banner(left == 1 ? "FALTA 1 FRAGMENTO" : $"FALTAM {left} FRAGMENTOS", Pal.BlueLight, 1.4f, 2);
             AudioManager.Play(Sfx.UiDeny);
+            return;
+        }
+        if (Endless)
+        {
+            exit.Ignite();
+            NextWave();
             return;
         }
         StartCoroutine(Win());
@@ -315,7 +430,12 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSecondsRealtime(1.1f);
         if (fx != null) fx.zoom.target = 1f;
         AudioManager.StopMusic();
-        hud.ShowGameOver(title, reason, Elapsed, Score, Fragments, TotalFragments);
+        if (Endless)
+        {
+            bool record = Settings.SubmitEndless(Wave, Score);
+            hud.ShowGameOver(title, record ? $"<#f8cf4e>NOVO RECORDE: ONDA {Wave}!</>" : reason, Elapsed, Score, Fragments, TotalFragments, Wave);
+        }
+        else hud.ShowGameOver(title, reason, Elapsed, Score, Fragments, TotalFragments);
     }
 
     public void Pause()

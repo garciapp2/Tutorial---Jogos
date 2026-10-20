@@ -56,6 +56,8 @@ public class PlayerVisual : MonoBehaviour
         {
             movement.Dashed += OnDash;
             movement.Bumped += OnBump;
+            movement.Refilled += OnRefill;
+            movement.Fell += OnFall;
         }
     }
 
@@ -65,6 +67,8 @@ public class PlayerVisual : MonoBehaviour
         {
             movement.Dashed -= OnDash;
             movement.Bumped -= OnBump;
+            movement.Refilled -= OnRefill;
+            movement.Fell -= OnFall;
         }
     }
 
@@ -79,6 +83,18 @@ public class PlayerVisual : MonoBehaviour
         fx.Kick(-dir, Fx.Tune.KickLight * 0.6f);
         fx.AddTrauma(0.08f);
         fx.Sparks(transform.position, -dir, 10, new[] { Pal.Orange, Pal.Yellow, Pal.Red }, 160f, 0.5f);
+    }
+
+    float fallAnim, refillFlash;
+
+    void OnFall() => fallAnim = 0.45f;
+
+    void OnRefill()
+    {
+        refillFlash = 0.12f;
+        sx.Kick(5f);
+        sy.Kick(5f);
+        if (Fx.Instance != null) Fx.Instance.Ring(transform.position, Pal.White, 18f, 0.25f, 16);
     }
 
     void OnBump(Vector2 normal, float impact)
@@ -140,7 +156,15 @@ public class PlayerVisual : MonoBehaviour
         sx.target = sy.target = 1f;
         sx.Update(Time.unscaledDeltaTime);
         sy.Update(Time.unscaledDeltaTime);
-        body.localScale = new Vector3(Mathf.Clamp(sx.value, 0.6f, 1.5f), Mathf.Clamp(sy.value, 0.6f, 1.5f), 1f);
+        float fall = 1f;
+        if (fallAnim > 0f)
+        {
+            fallAnim -= dt;
+            fall = Mathf.Clamp01(fallAnim / 0.45f);
+            body.localRotation = Quaternion.Euler(0, 0, (1f - fall) * 270f);
+        }
+        else body.localRotation = Quaternion.identity;
+        body.localScale = new Vector3(Mathf.Clamp(sx.value, 0.6f, 1.5f), Mathf.Clamp(sy.value, 0.6f, 1.5f), 1f) * fall;
 
         // o fogo de dentro cresce com os fragmentos; com o calor no fim ele encolhe e azula
         if (flame != null)
@@ -172,7 +196,16 @@ public class PlayerVisual : MonoBehaviour
         var tint = bodyRenderer.color;
         tint.a = blink ? 0.35f : 1f;
         bodyRenderer.color = tint;
-        if (glass != null) glass.color = tint;
+        if (glass != null)
+        {
+            // o vidro mostra a carga do dash: claro com carga, apagado sem
+            refillFlash -= Time.unscaledDeltaTime;
+            bool ready = movement == null || movement.HasDash;
+            var g = refillFlash > 0f ? Color.white : ready ? Color.white : new Color(0.45f, 0.5f, 0.75f);
+            g.a = tint.a;
+            glass.color = g;
+            if (whiteFlash != null && refillFlash > 0f) whiteFlash.enabled = true;
+        }
         if (flame != null) flame.color = new Color(flame.color.r, flame.color.g, flame.color.b, tint.a);
 
         UpdateGhosts(dt);

@@ -3,9 +3,10 @@ using UnityEngine;
 /// <summary>
 /// Espirito de gelo: anda numa direcao fixa (horizontal ou vertical) e inverte ao encostar
 /// numa parede. Nao persegue, mas machuca ao tocar (DamageOnTouch no filho).
+/// O dash da brasa o deixa atordoado e inofensivo por um tempo.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class PatrolEnemy : MonoBehaviour
+public class PatrolEnemy : MonoBehaviour, IStunnable
 {
     public Vector2 direction = Vector2.right;
     public float speed = 3f;
@@ -14,22 +15,43 @@ public class PatrolEnemy : MonoBehaviour
     public Transform visual;
 
     Rigidbody2D rb;
-    float phase;
+    SpriteRenderer sr;
+    Color baseColor = Color.white;
+    float phase, stunTimer;
     readonly Spring squash = new Spring(1f, 400f, 14f);
+
+    public bool Stunned => stunTimer > 0f;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         direction = direction.normalized;
         phase = Random.value * 10f;
+        if (visual != null)
+        {
+            sr = visual.GetComponent<SpriteRenderer>();
+            if (sr != null) baseColor = sr.color;
+        }
+    }
+
+    public void Stun(Vector2 from)
+    {
+        stunTimer = global::Stun.Duration;
+        squash.Kick(-10f);
+        global::Stun.Hit(transform.position, from);
     }
 
     void FixedUpdate()
     {
         var gm = GameManager.Instance;
         if (gm != null && !gm.IsPlaying && gm.CurrentState != GameManager.State.Ready) return;
+        if (stunTimer > 0f)
+        {
+            stunTimer -= Time.fixedDeltaTime;
+            return;
+        }
 
-        float step = speed * Time.fixedDeltaTime;
+        float step = speed * GameManager.EnemySpeed * Time.fixedDeltaTime;
         if (Physics2D.CircleCast(rb.position, radius, direction, step + 0.05f, wallMask).collider != null)
         {
             direction = -direction;
@@ -47,5 +69,6 @@ public class PatrolEnemy : MonoBehaviour
         visual.localPosition = new Vector3(0f, Mathf.Sin(Time.time * 4f + phase) * 0.1f, 0f);
         float flip = Mathf.Abs(direction.x) > 0.1f && direction.x < 0f ? -1f : 1f;
         visual.localScale = new Vector3(flip * (2f - s), s, 1f);
+        if (sr != null) global::Stun.Show(sr, visual, stunTimer, baseColor);
     }
 }

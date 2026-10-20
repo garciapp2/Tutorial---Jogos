@@ -17,6 +17,18 @@ public static class Settings
     public static float BestTime => PlayerPrefs.HasKey(Prefix + "BestTime") ? PlayerPrefs.GetFloat(Prefix + "BestTime") : -1f;
     public static int BestScore => PlayerPrefs.GetInt(Prefix + "BestScore", 0);
     public static string BestGrade => PlayerPrefs.GetString(Prefix + "BestGrade", "");
+    public static int BestWave => PlayerPrefs.GetInt(Prefix + "BestWave", 0);
+    public static int BestEndlessScore => PlayerPrefs.GetInt(Prefix + "BestEndlessScore", 0);
+
+    /// <summary>Guarda o resultado do modo infinito; devolve true se a onda foi recorde.</summary>
+    public static bool SubmitEndless(int wave, int score)
+    {
+        bool record = wave > BestWave;
+        if (record) PlayerPrefs.SetInt(Prefix + "BestWave", wave);
+        if (score > BestEndlessScore) PlayerPrefs.SetInt(Prefix + "BestEndlessScore", score);
+        PlayerPrefs.Save();
+        return record;
+    }
 
     /// <summary>Guarda o resultado de uma vitoria; devolve true se o tempo foi recorde.</summary>
     public static bool SubmitWin(float time, int score, string grade)

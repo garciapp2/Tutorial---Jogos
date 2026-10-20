@@ -29,6 +29,9 @@ public class PixelText : MaskableGraphic
     public float waveStep = 0.55f;
     [Tooltip("Letras caem uma a uma ao aparecer.")]
     public bool dropIn;
+    [Tooltip("Degrade vertical: a cor do texto em cima, gradientBottom embaixo.")]
+    public bool gradient;
+    public Color gradientBottom = Color.white;
     public int lineHeight = 10;
 
     const int Rows = 11, BaseRow = 2;
@@ -236,7 +239,18 @@ public class PixelText : MaskableGraphic
                     if (ch.c != ' ')
                     {
                         float x0 = x + off.x + dx, y1 = top + off.y + dy;
-                        Quad(vh, x0, y1 - Rows * s, x0 + g.y * s, y1, g.x * invW, (g.x + g.y) * invW, c);
+                        var bottom = c;
+                        if (gradient && !tint.HasValue)
+                        {
+                            // o degrade cobre as maiusculas (linhas 2 a 9 do glifo de 11)
+                            var gb = gradientBottom;
+                            gb.a = c.a;
+                            var topC = Color.LerpUnclamped(c, gb, -2f / 7f);
+                            bottom = Color.LerpUnclamped(c, gb, 9f / 7f);
+                            c = Clamp(topC);
+                            bottom = Clamp(bottom);
+                        }
+                        Quad(vh, x0, y1 - Rows * s, x0 + g.y * s, y1, g.x * invW, (g.x + g.y) * invW, c, bottom);
                     }
                     x += (g.y + 1) * s;
                     index++;
@@ -252,14 +266,16 @@ public class PixelText : MaskableGraphic
                 if (dx != 0 || dy != 0) yield return new Vector2(dx, dy);
     }
 
-    static void Quad(VertexHelper vh, float x0, float y0, float x1, float y1, float u0, float u1, Color c)
+    static Color Clamp(Color c) => new Color(Mathf.Clamp01(c.r), Mathf.Clamp01(c.g), Mathf.Clamp01(c.b), Mathf.Clamp01(c.a));
+
+    static void Quad(VertexHelper vh, float x0, float y0, float x1, float y1, float u0, float u1, Color top, Color bottom)
     {
         int i = vh.currentVertCount;
-        Color32 c32 = c;
-        vh.AddVert(new Vector3(x0, y0), c32, new Vector2(u0, 0f));
-        vh.AddVert(new Vector3(x0, y1), c32, new Vector2(u0, 1f));
-        vh.AddVert(new Vector3(x1, y1), c32, new Vector2(u1, 1f));
-        vh.AddVert(new Vector3(x1, y0), c32, new Vector2(u1, 0f));
+        Color32 t32 = top, b32 = bottom;
+        vh.AddVert(new Vector3(x0, y0), b32, new Vector2(u0, 0f));
+        vh.AddVert(new Vector3(x0, y1), t32, new Vector2(u0, 1f));
+        vh.AddVert(new Vector3(x1, y1), t32, new Vector2(u1, 1f));
+        vh.AddVert(new Vector3(x1, y0), b32, new Vector2(u1, 0f));
         vh.AddTriangle(i, i + 1, i + 2);
         vh.AddTriangle(i + 2, i + 3, i);
     }
