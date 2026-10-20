@@ -5,4 +5,4 @@ cd "$(dirname "$0")/../.."
 node --experimental-strip-types --no-warnings Tools/pxl.mjs build Tools/art/cold_ember.px.js --no-preview
 cp Tools/art/out/sprites/*.png Assets/Art/Pixel/
 cp Tools/art/out/anims/*.png Tools/art/out/anims/*.json Assets/Art/Pixel/Anims/
-mv -f Assets/Art/Pixel/ui_notch.png Assets/Art/Pixel/ui_pixel.png Assets/Resources/
+mv -f Assets/Art/Pixel/ui_notch.png Assets/Art/Pixel/ui_pixel.png Assets/Art/Pixel/ui_scanline.png Assets/Art/Pixel/ui_bezel.png Assets/Resources/

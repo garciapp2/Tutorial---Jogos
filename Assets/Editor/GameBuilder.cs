@@ -77,6 +77,8 @@ public static class GameBuilder
             PixelSprite(path.Replace('\\', '/'), 16, Vector4.zero);
         PixelSprite("Assets/Resources/ui_notch.png", 100, new Vector4(2, 2, 2, 2));
         PixelSprite("Assets/Resources/ui_pixel.png", 100, Vector4.zero);
+        PixelSprite("Assets/Resources/ui_scanline.png", 100, Vector4.zero, true);
+        PixelSprite("Assets/Resources/ui_bezel.png", 100, new Vector4(20, 20, 20, 20));
 
         // fonte: textura comum, sem filtro
         var font = (TextureImporter)AssetImporter.GetAtPath("Assets/Resources/PixelFont.png");
@@ -103,7 +105,7 @@ public static class GameBuilder
         }
     }
 
-    static void PixelSprite(string path, float ppu, Vector4 border)
+    static void PixelSprite(string path, float ppu, Vector4 border, bool repeat = false)
     {
         var ti = (TextureImporter)AssetImporter.GetAtPath(path);
         if (ti == null) return;
@@ -119,7 +121,7 @@ public static class GameBuilder
         ti.ReadTextureSettings(settings);
         settings.spriteMeshType = SpriteMeshType.FullRect;
         settings.spriteAlignment = (int)SpriteAlignment.Center;
-        settings.wrapMode = TextureWrapMode.Clamp;
+        settings.wrapMode = repeat ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
         ti.SetTextureSettings(settings);
         ti.SaveAndReimport();
     }
@@ -210,14 +212,14 @@ public static class GameBuilder
         bloom.intensity.Override(0.7f);
         bloom.scatter.Override(0.6f);
         var vignette = profile.Add<Vignette>(true);
-        vignette.intensity.Override(0.32f);
+        vignette.intensity.Override(0.26f);
         vignette.smoothness.Override(0.45f);
         vignette.color.Override(Color.black);
         var chroma = profile.Add<ChromaticAberration>(true);
         chroma.intensity.Override(0.04f);
         var lens = profile.Add<LensDistortion>(true);
-        lens.intensity.Override(-0.07f);
-        lens.scale.Override(1f);
+        lens.intensity.Override(0.34f);
+        lens.scale.Override(0.95f);
         foreach (var c in profile.components) AssetDatabase.AddObjectToAsset(c, profile);
         EditorUtility.SetDirty(profile);
         AssetDatabase.SaveAssets();
@@ -320,9 +322,12 @@ public static class GameBuilder
         return cam;
     }
 
+    static GameObject[] crtOverlays;
+
     static Fx CreateFx(Volume volume, Image flash, bool calm)
     {
         var fx = new GameObject("Fx").AddComponent<Fx>();
+        fx.crtOverlays = crtOverlays;
         fx.volume = volume;
         fx.flashOverlay = flash;
         fx.particleMaterial = unlit;
@@ -754,6 +759,30 @@ public static class GameBuilder
         var es = new GameObject("EventSystem");
         es.AddComponent<EventSystem>();
         ConfigureUIModule(es.AddComponent<InputSystemUIInputModule>());
+
+        // tela de fliperama: linhas de varredura e moldura num canvas por cima, fora da curvatura
+        // (curvadas, as linhas finas faziam moire e a borda esticava)
+        var crt = new GameObject("Tela de Fliperama");
+        var crtCanvas = crt.AddComponent<Canvas>();
+        crtCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        crtCanvas.sortingOrder = 500;
+        var crtScaler = crt.AddComponent<CanvasScaler>();
+        crtScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        crtScaler.referenceResolution = new Vector2(300, 240);
+        crtScaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        crtScaler.matchWidthOrHeight = 1f;
+        crtScaler.referencePixelsPerUnit = 100;
+        var scan = Stretch(crt.transform, "Varredura").gameObject.AddComponent<Image>();
+        scan.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resources/ui_scanline.png");
+        scan.type = Image.Type.Tiled;
+        scan.pixelsPerUnitMultiplier = 2f;
+        scan.raycastTarget = false;
+        var bezel = Stretch(crt.transform, "Moldura").gameObject.AddComponent<Image>();
+        bezel.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resources/ui_bezel.png");
+        bezel.type = Image.Type.Sliced;
+        bezel.fillCenter = false;
+        bezel.raycastTarget = false;
+        crtOverlays = new[] { scan.gameObject, bezel.gameObject };
 
         // clarao de tela: o ultimo filho, por cima de tudo
         var f = Stretch(go.transform, "Clarao");

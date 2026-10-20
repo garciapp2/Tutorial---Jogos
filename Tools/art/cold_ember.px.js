@@ -222,3 +222,17 @@ sprite("pit", { w: 16, h: 16 }, rect(0, 0, 16, 16, "k"), hline(0, 15, 16, "n"), 
 sprite("pit_top", { w: 16, h: 16 }, stamp("pit", 0, 0),
   rect(0, 0, 16, 3, "s"), hline(0, 0, 16, "c"), hline(0, 3, 16, "d"),
   px(3, 4, "d"), px(4, 4, "s"), px(9, 4, "d"), px(13, 4, "s"), px(14, 5, "d"), px(6, 1, "w"))
+
+// ------------------------------------------------------------------ tela de fliperama
+// Linha de varredura: metade de cima limpa, metade de baixo escura (repete por pixel logico).
+pal({ Z: "#0b091270" })
+sprite("ui_scanline", { w: 1, h: 2 }, px(0, 1, "Z"))
+// Canto da moldura: preto fora de um quarto de circulo (fatiado em 9 no jogo).
+sprite("ui_bezel", { w: 40, h: 40 }, (c) => {
+  for (let y = 0; y < 40; y++) for (let x = 0; x < 40; x++) {
+    const cx = x < 20 ? 19.5 : 20.5, cy = y < 20 ? 19.5 : 20.5
+    // dentro: retangulo com cantos de raio 14, recuado 5 px da borda
+    const ix = Math.max(0, Math.abs(x + 0.5 - 20) - 1), iy = Math.max(0, Math.abs(y + 0.5 - 20) - 1)
+    if (Math.hypot(ix, iy) > 14) c.px(x, y, "k")
+  }
+})

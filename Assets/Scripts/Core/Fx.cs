@@ -29,6 +29,8 @@ public class Fx : MonoBehaviour
     public Volume volume;
     public Image flashOverlay;
     public Material particleMaterial;
+    [Tooltip("Linhas de varredura e moldura: somem com a tela de fliperama desligada.")]
+    public GameObject[] crtOverlays;
     [Tooltip("Desliga tremor e clarao (tela de titulo).")]
     public bool calm;
 
@@ -122,17 +124,20 @@ public class Fx : MonoBehaviour
     void ApplyPost()
     {
         bool crt = Settings.Crt;
-        if (chroma != null) chroma.intensity.value = Mathf.Clamp01((crt ? 0.04f : 0f) + Chroma * 60f);
+        if (chroma != null) chroma.intensity.value = Mathf.Clamp01((crt ? 0.18f : 0f) + Chroma * 60f);
         if (lens != null)
         {
+            // curvatura de tubo: abaula a imagem e deixa as bordas curvas
             lens.active = crt;
-            lens.intensity.value = -0.07f;
-            lens.scale.value = 1f;
+            lens.intensity.value = 0.34f;
+            lens.scale.value = 0.95f;
         }
+        if (crtOverlays != null)
+            foreach (var o in crtOverlays) if (o != null && o.activeSelf != crt) o.SetActive(crt);
         if (vignette != null)
         {
             float pulse = Frost > 0.75f ? (Mathf.Sin(time * 7f) * 0.5f + 0.5f) * 0.08f : 0f;
-            vignette.intensity.value = (crt ? 0.32f : 0.18f) + Frost * 0.22f + pulse;
+            vignette.intensity.value = (crt ? 0.26f : 0.18f) + Frost * 0.22f + pulse;
             vignette.color.value = Color.Lerp(Color.black, new Color(0.25f, 0.6f, 1f), Frost * 0.9f);
         }
         if (flashOverlay != null)
