@@ -137,8 +137,12 @@ public class HUD : MonoBehaviour
         fragmentIcon.localScale = Vector3.one * fragPop.value;
 
         hint.Text = GameInput.UsingGamepad
-            ? "ANALÓGICO mover   <#f8cf4e>A</> dash   <#f8cf4e>START</> pausa"
-            : "WASD mover   <#f8cf4e>ESPAÇO</> dash   <#f8cf4e>ESC</> pausa";
+            ? "<#f8cf4e>A</> dash   <#f8cf4e>START</> pausa"
+            : "<#f8cf4e>ESPAÇO</> dash   <#f8cf4e>ESC</> pausa";
+        // a dica some depois do comeco da partida
+        var hc = hint.color;
+        hc.a = Mathf.Clamp01(1f - (gm.Elapsed - 6f));
+        hint.color = hc;
     }
 
     void SetWidth(RectTransform rt, float frac)
@@ -167,6 +171,8 @@ public class HUD : MonoBehaviour
     public void Banner(string text, Color color, float duration, int scale = 3)
     {
         banner.Text = text;
+        // diminui ate caber na largura da tela
+        while (scale > 1 && PixelText.Width(text, scale) > 290) scale--;
         banner.scale = scale;
         banner.color = color;
         banner.Replay();

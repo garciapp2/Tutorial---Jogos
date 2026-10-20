@@ -37,7 +37,7 @@ public class Backdrop : MonoBehaviour
         Shader.SetGlobalFloat(PulseId, fx != null ? fx.Pulse : 0f);
         Shader.SetGlobalFloat(DimId, dim);
         float aspect = Screen.width / Mathf.Max(1f, Screen.height);
-        Shader.SetGlobalVector(LogicalId, new Vector4(270f * aspect, 270f, 0, 0));
+        Shader.SetGlobalVector(LogicalId, new Vector4(240f * aspect, 240f, 0, 0));
         for (int i = 0; i < 3; i++)
             Shader.SetGlobalColor(BgIds[i], Color.Lerp(warm[i], cold[i], coldness));
     }

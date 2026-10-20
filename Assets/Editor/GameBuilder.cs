@@ -18,7 +18,7 @@ using UnityEngine.UI;
 /// <summary>
 /// Monta as cenas de Cold Ember a partir da pixel art (Tools/art, gerada com o pxl) e do mapa
 /// em Assets/Levels/arena.txt. Menu: Cold Ember > Construir tudo.
-/// Toda a interface e montada em pixels logicos: o canvas tem 480x270 unidades.
+/// Toda a interface e montada em pixels logicos: o canvas tem 300x240 unidades (600x480 em 2x).
 /// </summary>
 public static class GameBuilder
 {
@@ -29,7 +29,7 @@ public static class GameBuilder
     const string SceneDir = "Assets/Scenes/";
     const string MapPath = "Assets/Levels/arena.txt";
     const string WallLayerName = "Walls";
-    const float CameraSize = 8.4375f; // 270 px de altura / 2 / 16 px por unidade
+    const float CameraSize = 7.5f; // 240 px de altura / 2 / 16 px por unidade (janela de 600x480 em 2x)
 
     static Material unlit;
     static Material swirl;
@@ -745,7 +745,7 @@ public static class GameBuilder
         canvas.sortingOrder = 100;
         var scaler = go.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(480, 270);
+        scaler.referenceResolution = new Vector2(300, 240);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 1f;
         scaler.referencePixelsPerUnit = 100;
@@ -889,7 +889,7 @@ public static class GameBuilder
         hud.heartEmpty = Px("heart_empty");
 
         // --- vida e pontos
-        var left = Box(root, "Vida e Pontos", TL, TL, new Vector2(10, -9), new Vector2(92, 34));
+        var left = Box(root, "Vida e Pontos", TL, TL, new Vector2(8, -8), new Vector2(92, 34));
         PixelPanel.Create(left, Pal.Night, Pal.Slate);
         hud.hearts = new Image[3];
         for (int i = 0; i < 3; i++) hud.hearts[i] = Icon(left, "Coracao" + (i + 1), Px("heart"), TL, new Vector2(12 + i * 14, -11));
@@ -897,7 +897,7 @@ public static class GameBuilder
         hud.scoreText = Text(left, "Pontos", "000000", TR, TR, new Vector2(-7, -22), new Vector2(50, 10), Pal.White, 1, PixelText.Align.Right);
 
         // --- calor (cronometro regressivo)
-        var heat = Box(root, "Calor", TC, TC, new Vector2(0, -9), new Vector2(178, 22));
+        var heat = Box(root, "Calor", BC, BC, new Vector2(0, 8), new Vector2(178, 22));
         PixelPanel.Create(heat, Pal.Night, Pal.Slate);
         hud.heatIcon = Icon(heat, "Icone", Px("icon_heat"), TL, new Vector2(11, -11)).rectTransform;
         var bar = Box(heat, "Barra", TL, TL, new Vector2(22, -7), new Vector2(122, 8));
@@ -912,22 +912,22 @@ public static class GameBuilder
         hud.heatShine.gameObject.AddComponent<Image>().color = Pal.Alpha(Pal.White, 0.35f);
         hud.heatBarWidth = 120;
         hud.heatText = Text(heat, "Segundos", "30.0s", TR, TR, new Vector2(-6, -8), new Vector2(30, 10), Pal.White, 1, PixelText.Align.Right);
-        hud.frostLabel = Text(root, "Congelando", "CONGELANDO!", TC, TC, new Vector2(0, -36), new Vector2(120, 10), Pal.BlueLight, 1, PixelText.Align.Center, true, false);
+        hud.frostLabel = Text(root, "Congelando", "CONGELANDO!", BC, BC, new Vector2(0, 36), new Vector2(120, 10), Pal.BlueLight, 1, PixelText.Align.Center, true, false);
 
         // --- tempo e fragmentos
-        var right = Box(root, "Tempo e Fragmentos", TR, TR, new Vector2(-10, -9), new Vector2(78, 34));
+        var right = Box(root, "Tempo e Fragmentos", TR, TR, new Vector2(-8, -8), new Vector2(78, 34));
         PixelPanel.Create(right, Pal.Night, Pal.Slate);
         Icon(right, "Relogio", Px("icon_clock"), TL, new Vector2(12, -11));
         hud.timeText = Text(right, "Tempo", "00:00.0", TR, TR, new Vector2(-7, -8), new Vector2(54, 10), Pal.White, 1, PixelText.Align.Right);
         hud.fragmentIcon = Icon(right, "Fragmento", Px("icon_fragment"), TL, new Vector2(12, -24)).rectTransform;
         hud.fragmentText = Text(right, "Fragmentos", "0/5", TR, TR, new Vector2(-7, -21), new Vector2(54, 10), Pal.White, 1, PixelText.Align.Right);
 
-        hud.hint = Text(root, "Dica", "", BL, BL, new Vector2(12, 16), new Vector2(300, 10), Pal.Fog, 1, PixelText.Align.Left, true);
+        hud.hint = Text(root, "Dica", "", TC, TC, new Vector2(0, -46), new Vector2(290, 10), Pal.Fog, 1, PixelText.Align.Center, true);
 
         // --- mensagens
         hud.popupLayer = Stretch(root, "Popups");
         hud.popupTemplate = Text(hud.popupLayer, "PopupModelo", "+3s", MC, MC, Vector2.zero, new Vector2(200, 24), Pal.Orange, 1, PixelText.Align.Center, true, true, true);
-        hud.banner = Text(root, "Faixa", "", MC, MC, new Vector2(0, 46), new Vector2(470, 40), Pal.Yellow, 3, PixelText.Align.Center, true, true, true);
+        hud.banner = Text(root, "Faixa", "", MC, MC, new Vector2(0, 40), new Vector2(296, 40), Pal.Yellow, 3, PixelText.Align.Center, true, true, true);
         hud.banner.dropIn = true;
 
         // --- escurecer
@@ -951,9 +951,9 @@ public static class GameBuilder
 
         // --- resultado / derrota
         var res = Stretch(root, "Resultado");
-        var rc = Card(res, "Card", new Vector2(300, 196), new Vector2(0, -14), Pal.Orange);
+        var rc = Card(res, "Card", new Vector2(288, 196), new Vector2(0, 0), Pal.Orange);
         hud.resultsCard = rc;
-        hud.resultsTitle = Text(rc, "Titulo", "", TC, TC, new Vector2(0, -12), new Vector2(290, 20), Pal.Yellow, 2, PixelText.Align.Center);
+        hud.resultsTitle = Text(rc, "Titulo", "", TC, TC, new Vector2(0, -12), new Vector2(280, 20), Pal.Yellow, 2, PixelText.Align.Center);
         hud.resultsReason = Text(rc, "Motivo", "", TL, TL, new Vector2(16, -38), new Vector2(200, 20), Pal.Bone, 1, PixelText.Align.Left, false, false, false, true);
         hud.resultsLabels = Text(rc, "Rotulos", "", TL, TL, new Vector2(16, -64), new Vector2(110, 60), Pal.Fog, 1, PixelText.Align.Left, false);
         hud.resultsValues = Text(rc, "Valores", "", TL, TL, new Vector2(16, -64), new Vector2(196, 60), Pal.White, 1, PixelText.Align.Right, true);
@@ -992,62 +992,56 @@ public static class GameBuilder
 
         var main = Stretch(root, "Principal");
         menu.mainPanel = main.gameObject;
-        menu.logoRoot = Box(main, "Logo", TC, TC, new Vector2(0, -34), new Vector2(92, 80));
-        Text(main, "Frase", "MANTENHA A CHAMA ACESA", TC, TC, new Vector2(0, -112), new Vector2(220, 10), Pal.Bone, 1, PixelText.Align.Center);
+        menu.logoRoot = Box(main, "Logo", TC, TC, new Vector2(0, -16), new Vector2(92, 80));
+        Text(main, "Frase", "MANTENHA A CHAMA ACESA", TC, TC, new Vector2(0, -92), new Vector2(220, 10), Pal.Bone, 1, PixelText.Align.Center);
         var mm = Menu(main.gameObject);
         menu.menu = mm;
-        var col = Box(main, "Botoes", TC, TC, new Vector2(0, -130), new Vector2(120, 100));
+        var col = Box(main, "Botoes", TC, TC, new Vector2(0, -108), new Vector2(120, 100));
         var isz = new Vector2(120, 18);
         Item(col, mm, "JOGAR", Pal.Red, new Vector2(0, 0), isz, menu.Play);
-        Item(col, mm, "MODO INFINITO", Pal.Orange, new Vector2(0, -22), isz, menu.PlayEndless);
-        Item(col, mm, "COMO JOGAR", Pal.Blue, new Vector2(0, -44), isz, menu.ShowHowTo);
-        Item(col, mm, "OPÇÕES", Pal.Purple, new Vector2(0, -66), isz, menu.ShowOptions);
-        menu.quitItem = Item(col, mm, "SAIR", Pal.Slate, new Vector2(0, -88), isz, menu.Quit);
-        menu.record = Text(main, "Recorde", "", BC, BC, new Vector2(0, 34), new Vector2(460, 10), Pal.Fog, 1, PixelText.Align.Center, false);
-        menu.hint = Text(main, "Dica", "", BC, BC, new Vector2(0, 18), new Vector2(460, 10), Pal.Fog, 1, PixelText.Align.Center, false);
+        Item(col, mm, "MODO INFINITO", Pal.Orange, new Vector2(0, -21), isz, menu.PlayEndless);
+        Item(col, mm, "COMO JOGAR", Pal.Blue, new Vector2(0, -42), isz, menu.ShowHowTo);
+        Item(col, mm, "OPÇÕES", Pal.Purple, new Vector2(0, -63), isz, menu.ShowOptions);
+        menu.quitItem = Item(col, mm, "SAIR", Pal.Slate, new Vector2(0, -84), isz, menu.Quit);
+        menu.record = Text(main, "Recorde", "", BC, BC, new Vector2(0, 26), new Vector2(296, 10), Pal.Fog, 1, PixelText.Align.Center, false);
+        menu.hint = Text(main, "Dica", "", BC, BC, new Vector2(0, 12), new Vector2(296, 10), Pal.Fog, 1, PixelText.Align.Center, false);
 
         // como jogar
         var how = Stretch(root, "Como Jogar");
-        var hc = Card(how, "Card", new Vector2(452, 236), Vector2.zero, Pal.Blue);
-        Text(hc, "Titulo", "COMO JOGAR", TC, TC, new Vector2(0, -10), new Vector2(440, 20), Pal.White, 2, PixelText.Align.Center);
-        Text(hc, "Objetivo", "Você é a última brasa de uma fogueira congelada. Junte os <#f8cf4e>5 fragmentos de chama</> e volte para reacendê-la antes que o calor acabe.",
-            TL, TL, new Vector2(14, -32), new Vector2(424, 20), Pal.Bone, 1, PixelText.Align.Left, false, false, false, true);
+        var hc = Card(how, "Card", new Vector2(292, 232), Vector2.zero, Pal.Blue);
+        Text(hc, "Titulo", "COMO JOGAR", TC, TC, new Vector2(0, -8), new Vector2(280, 20), Pal.White, 2, PixelText.Align.Center);
         var rowsData = new (string sprite, bool anim, string text)[]
         {
             ("coal", true, "<#f58a3a>CARVÃO</>  +3s e recarrega o dash"),
-            ("fragment", true, "<#f8cf4e>FRAGMENTO</>  +5s. Junte os cinco"),
-            ("bonfire_off", false, "<#f8cf4e>FOGUEIRA</>  Abre com os 5 fragmentos"),
-            ("frost_a", false, "<#a3cbff>GELO</>  O calor cai 2,5x mais rápido"),
-            ("pit_top", false, "<#7a75aa>ABISMO</>  Só se atravessa com dash"),
-            ("ghost", true, "<#aaf3e4>ESPÍRITO</>  Patrulha. O dash atordoa"),
-            ("hunter", true, "<#d9b5ff>CAÇADOR</>  Persegue. O dash atordoa"),
-            ("spikes", false, "<#a3cbff>CRISTAIS</>  Ferem. O dash quebra"),
+            ("fragment", true, "<#f8cf4e>FRAGMENTO</>  junte 5 e volte à fogueira"),
+            ("frost_a", false, "<#a3cbff>GELO</>  o calor cai 2,5x mais rápido"),
+            ("pit_top", false, "<#7a75aa>ABISMO</>  só se cruza com dash"),
+            ("ghost", true, "<#aaf3e4>ESPÍRITO</>  patrulha. O dash atordoa"),
+            ("hunter", true, "<#d9b5ff>CAÇADOR</>  persegue. O dash atordoa"),
+            ("spikes", false, "<#a3cbff>CRISTAIS</>  ferem. O dash quebra"),
         };
         for (int i = 0; i < rowsData.Length; i++)
         {
             var (sprite, isAnim, text) = rowsData[i];
-            float y = -60 - i * 18;
+            float y = -36 - i * 16;
             var s = isAnim ? Anim(sprite)[0] : Px(sprite);
-            float k = Mathf.Min(1f, 18f / Mathf.Max(s.rect.width, s.rect.height));
-            var icon = Icon(hc, sprite, s, TL, new Vector2(26, y), k);
+            float k = Mathf.Min(1f, 13f / Mathf.Max(s.rect.width, s.rect.height));
+            var icon = Icon(hc, sprite, s, TL, new Vector2(18, y), k);
             if (isAnim)
             {
                 var a = icon.gameObject.AddComponent<UIAnim>();
                 a.frames = Anim(sprite);
                 a.fps = 6f;
             }
-            Text(hc, "Linha" + i, text, TL, TL, new Vector2(42, y + 4), new Vector2(200, 10), Pal.White, 1);
+            Text(hc, "Linha" + i, text, TL, TL, new Vector2(30, y + 4), new Vector2(256, 10), Pal.White, 1);
         }
-        Text(hc, "Controles", "CONTROLES", TR, TR, new Vector2(-14, -56), new Vector2(170, 10), Pal.Yellow, 1, PixelText.Align.Left);
         Text(hc, "Teclas",
-            "<#7a75aa>MOVER</>\n WASD / SETAS\n <#a3cbff>ANALÓGICO / D-PAD</>\n" +
-            "<#7a75aa>DASH</>\n ESPAÇO / SHIFT\n <#a3cbff>A / RT</>\n" +
-            "<#7a75aa>PAUSA</>\n ESC / P\n <#a3cbff>START</>",
-            TR, TR, new Vector2(-14, -70), new Vector2(170, 100), Pal.White, 1, PixelText.Align.Left, false);
-        Text(hc, "Dash", "DASH em 8 direções (1s de calor). Volta sozinho ou ao pegar carvão. No dash você é intocável.",
-            TR, TR, new Vector2(-14, -160), new Vector2(170, 40), Pal.Bone, 1, PixelText.Align.Left, false, false, false, true);
+            "<#7a75aa>MOVER</>  WASD / setas   <#a3cbff>analógico</>\n" +
+            "<#7a75aa>DASH</>  espaço / shift   <#a3cbff>A / RT</>  (8 direções)\n" +
+            "<#7a75aa>PAUSA</>  esc / P   <#a3cbff>start</>",
+            TL, TL, new Vector2(12, -150), new Vector2(270, 40), Pal.White, 1, PixelText.Align.Left, false);
         var hm = Menu(hc.gameObject);
-        Item(hc, hm, "VOLTAR", Pal.Blue, new Vector2(0, -210), new Vector2(120, 18), menu.ShowMain);
+        Item(hc, hm, "VOLTAR", Pal.Blue, new Vector2(0, -206), new Vector2(120, 18), menu.ShowMain);
         menu.howToPanel = how.gameObject;
         menu.howToMenu = hm;
         menu.options = BuildOptionsPanel(root);
@@ -1066,8 +1060,8 @@ public static class GameBuilder
         PlayerSettings.productName = "Cold Ember";
         PlayerSettings.companyName = "garciapp2";
         PlayerSettings.runInBackground = true;
-        PlayerSettings.defaultWebScreenWidth = 960;
-        PlayerSettings.defaultWebScreenHeight = 540;
+        PlayerSettings.defaultWebScreenWidth = 600;
+        PlayerSettings.defaultWebScreenHeight = 480;
         PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
         PlayerSettings.WebGL.decompressionFallback = true;
         PlayerSettings.WebGL.dataCaching = true;

@@ -15,6 +15,8 @@ public class CaptureRig : MonoBehaviour
     public int fps = 15;
     public readonly List<System.Func<IEnumerator>> route = new List<System.Func<IEnumerator>>();
     public bool Done { get; private set; }
+    [Tooltip("Grava pela camera neste tamanho (o da janela do jogo no itch.io), em vez da Game view.")]
+    public Vector2Int size = new Vector2Int(600, 480);
 
     PlayerMovement player;
 
@@ -24,16 +26,28 @@ public class CaptureRig : MonoBehaviour
         if (p != null) player = p.GetComponent<PlayerMovement>();
         Directory.CreateDirectory(folder);
         foreach (var f in Directory.GetFiles(folder, "*.png")) File.Delete(f);
+        // a camera desenha (com a interface e o pos-processamento) numa textura do tamanho da janela do jogo
+        var cam = Camera.main;
+        var rt = new RenderTexture(size.x, size.y, 24);
+        cam.targetTexture = rt;
+        yield return null;
+        yield return null;
         StartCoroutine(Pilot());
+        var tex = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
         int frame = 0;
         for (float t = 0f; t < seconds; t += 1f / fps)
         {
             yield return new WaitForEndOfFrame();
-            var tex = ScreenCapture.CaptureScreenshotAsTexture();
+            RenderTexture.active = rt;
+            tex.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
             File.WriteAllBytes(Path.Combine(folder, $"f{frame++:000}.png"), tex.EncodeToPNG());
-            Destroy(tex);
             yield return new WaitForSecondsRealtime(1f / fps);
         }
+        cam.targetTexture = null;
+        Destroy(rt);
+        Destroy(tex);
         if (player != null) player.demoInput = null;
         Done = true;
     }

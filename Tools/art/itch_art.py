@@ -242,10 +242,10 @@ if __name__ == "__main__":
 
 def embed_background():
     """Fundo do embed (atras do jogo na pagina do itch.io), no tamanho da janela do jogo."""
-    W, H, S = 480, 270, 2
-    c = swirl(W, H, block=2, t=5.0, dim=0.2)
-    snow(c, 120, seed=21)
-    c.convert("RGB").resize((W * S, H * S), Image.NEAREST).save(os.path.join(OUT, "itch_embed_fundo_960x540.png"))
+    W, H, S = 300, 240, 2
+    c = swirl(W, H, block=1, t=5.0, dim=0.2)
+    snow(c, 90, seed=21)
+    c.convert("RGB").resize((W * S, H * S), Image.NEAREST).save(os.path.join(OUT, "itch_embed_fundo_600x480.png"))
 
 
 def loading_logo():

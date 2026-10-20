@@ -39,9 +39,9 @@ public class MainMenu : MonoBehaviour
         howToMenu.onBackRuntime = ShowMain;
         float best = Settings.BestTime;
         record.Text = best >= 0f
-            ? $"RECORDE  <#fff6e0>{Settings.FormatTime(best)}</>   NOTA  <#f8cf4e>{(Settings.BestGrade == "" ? "-" : Settings.BestGrade)}</>   <#fff6e0>{Settings.BestScore}</> PTS"
+            ? $"RECORDE <#fff6e0>{Settings.FormatTime(best)}</>  NOTA <#f8cf4e>{(Settings.BestGrade == "" ? "-" : Settings.BestGrade)}</>"
             : "NENHUMA FOGUEIRA ACESA AINDA";
-        if (Settings.BestWave > 0) record.Text += $"   INFINITO  <#fff6e0>ONDA {Settings.BestWave}</>";
+        if (Settings.BestWave > 0) record.Text += $"  ONDA <#fff6e0>{Settings.BestWave}</>";
     }
 
     void BuildLogo()
@@ -125,8 +125,8 @@ public class MainMenu : MonoBehaviour
         emberShadow.localScale = Vector3.one * (1f - bounce * 0.3f);
 
         hint.Text = GameInput.UsingGamepad
-            ? "<#f8cf4e>ANALÓGICO</> escolhe   <#f8cf4e>A</> confirma   <#f8cf4e>B</> volta"
-            : "<#f8cf4e>SETAS</> escolhem   <#f8cf4e>ESPAÇO</> confirma   <#f8cf4e>ESC</> volta";
+            ? "<#f8cf4e>A</> confirma   <#f8cf4e>B</> volta"
+            : "<#f8cf4e>SETAS</> escolhem  <#f8cf4e>ESPAÇO</> confirma";
     }
 
     static void SetAlpha(RectTransform rt, float a)

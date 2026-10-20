@@ -12,8 +12,8 @@ public class CameraRig : MonoBehaviour
     public float smoothTime = 0.12f;
     public Rect bounds = new Rect(0, 0, 46, 30);
     public float margin = 1.5f;
-    [Tooltip("Meia altura da visao em unidades (480x270 com 16 px por unidade).")]
-    public float baseSize = 8.4375f;
+    [Tooltip("Meia altura da visao em unidades (300x240 com 16 px por unidade).")]
+    public float baseSize = 7.5f;
 
     Camera cam;
     Vector3 basePos;
